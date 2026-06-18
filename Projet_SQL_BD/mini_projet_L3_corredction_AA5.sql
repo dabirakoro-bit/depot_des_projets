@@ -24,7 +24,9 @@
 --Initialisation de la base 
 --(les DROP étais en commentaire, ils nous a été conseiller de le mettre sans commentaire )
 DROP VIEW IF EXISTS liste_des_categories; 
-DROP VIEW IF EXISTS vehicule_loue;     
+DROP VIEW IF EXISTS vehicule_loue; 
+DROP VIEW IF EXISTS vue_facture_location;
+DROP VIEW IF EXISTS vehicules_disponibles;
 
 DROP TABLE IF EXISTS location;   
 DROP TABLE IF EXISTS vehicule;   
@@ -51,6 +53,10 @@ CREATE TABLE client (
    - faciliter l’expression des contraintes dépendant du jour
    - un véhicule ne peut être loué qu’une fois par jour
    - un client ne peut louer qu’un seul véhicule par jour
+La table jour permet de gérer explicitement les dates de location. 
+Elle garantit qu’une location ne peut être enregistrée que pour des jours valides et préalablement définis dans la base de données. 
+Cela permet de limiter les locations aux jours d’ouverture de l’agence, d’éviter l’enregistrement de dates passées ou non autorisées, et d’assurer la cohérence des réservations.
+
 */
 CREATE TABLE jour (
     mydate DATE PRIMARY KEY          
@@ -142,12 +148,14 @@ INSERT INTO categorie VALUES
 
  --  TABLE jour
 /* Plusieurs jours pour illustrer les locations sur plusieurs jours */
-INSERT INTO jour VALUES
-('2025-01-10'),  -- jour 1
-('2025-01-11'),  -- jour 2
-('2025-01-12'),  -- jour 3
-('2025-01-13'),  -- jour 4
-('2025-01-14');  -- jour 5
+INSERT INTO jour (mydate) --Géneration automatique des dates ouvertes aux locations 
+SELECT generate_series(
+    '2025-01-10'::date,
+    '2025-01-31'::date,
+    interval '1 day'
+)::date;
+
+
 
 -- TABLE vehicule
 /* Chaque véhicule est associé à une catégorie :
@@ -245,3 +253,46 @@ LEFT JOIN client c ON l.locataire = c.reference -- AA Pourquoi LEFT : pour povoi
  2025-01-14    | Renault Clio 5  | journalier   |   40 | CAT-A     | Dupont | Jean      | 0601020304
                | Porsche Cayenne |              |      | CAT-D     |        |           | 
 (7 lignes)*/
+
+
+
+
+--SERVICE 3
+--vue pour affiché les vehicules disponible pour la location 
+DROP VIEW IF EXISTS vehicules_disponibles;
+
+CREATE VIEW vehicules_disponibles AS
+SELECT
+    v.immatriculation AS immatriculation,
+    v.v_description AS description,
+    v.v_categorie,       
+    cat.intitule AS categorie,
+    cat.tarifJour AS tarifjour,
+    cat.tarifKM AS tarifkm
+FROM vehicule v
+JOIN categorie cat ON v.v_categorie = cat.reference;
+
+
+
+--SERVICE 5
+--Vue pour récolté les information de la facture et effectué les calcules 
+CREATE VIEW vue_facture_location AS
+SELECT
+    l.locataire        AS reference_client,
+    l.moment           AS date_location,
+    l.kmDepart         AS km_depart,
+    l.kmRetour         AS km_retour,
+    l.tarifChoisi      AS mode_tarif,
+
+    v.immatriculation  AS immatriculation,
+    v.v_description    AS description,
+
+    cat.intitule       AS categorie,
+    cat.tarifJour      AS tarif_journalier,
+    cat.tarifKM        AS tarif_kilometrique
+
+FROM location l
+JOIN vehicule v  ON l.loue = v.immatriculation
+JOIN categorie cat ON v.v_categorie = cat.reference;
+
+

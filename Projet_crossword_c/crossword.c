@@ -2,9 +2,9 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <time.h>
+#include "lexicon_include.h"
 
-#define MAX_WORD_SIZE 30
-#define MAX_WORDS 10
 
 #define ROWS 15            // nombre de lignes de la grille
 #define COLS 15            // nombre de colonnes de la grille
@@ -12,22 +12,6 @@
 
 
 
-/* Loads a lexicon from a file.
- *    filename: the path to the file containing the lexicon
- *    lexicon: contains the lexicon when function terminates
- *    lexicon_size: contains the number of words of the lexicon when function terminates
- */
-void read_lexicon(const char* filename, char lexicon[MAX_WORDS][MAX_WORD_SIZE], int* lexicon_size) {
-  FILE* lex_file;
-
-  if((lex_file=fopen(filename, "r")) == NULL) {
-    fprintf(stderr,"Cannot open file %s\n", filename);
-    exit(1);
-  }
-  *lexicon_size=0;
-  while(*lexicon_size<MAX_WORDS && fscanf(lex_file, "%s",lexicon[*lexicon_size])!=EOF)
-    (*lexicon_size)++;
-}
 typedef enum { HORIZONTAL, VERTICAL } Direction;
 
 //initialisation de la grille
@@ -49,8 +33,7 @@ void display_grid(char grid[ROWS][COLS]) {
     }
 }
 
-#include <string.h>
-#include <stdbool.h>
+
 
 bool place_first_word(char grid[ROWS][COLS], const char* word, int row, int col, Direction dir) {
     int word_len = strlen(word);
@@ -72,22 +55,28 @@ bool place_first_word(char grid[ROWS][COLS], const char* word, int row, int col,
 
 
 int main() {
+  srand(time(NULL)) ; 
     char grid[ROWS][COLS];
+    char lexicon[MAX_WORDS][MAX_WORD_SIZE];
+    int lexicon_size; 
+    
+    read_lexicon("lexique",lexicon,&lexicon_size);
     initialize_grid(grid);
+    
+    int  rand_index = rand() % lexicon_size;    
+    const char* first_word = lexicon[rand_index];
 
     // Premier mot à placer
-    const char* first_word = "banana";
-
     // Placer horizontalement au centre de la grille
     int start_row = ROWS / 2;
     int start_col = (COLS - strlen(first_word)) / 2;
+     
+     while(!place_first_word(grid, first_word, start_row, start_col, HORIZONTAL)){
+           rand_index = rand() % lexicon_size;    
+           first_word = lexicon[rand_index];
 
-    if (place_first_word(grid, first_word, start_row, start_col, HORIZONTAL)) {
-        printf("Premier mot placé : %s\n", first_word);
-    } else {
-        printf("Impossible de placer le premier mot.\n");
-    }
-
+    } 
+     printf("Premier mot placé : %s\n", first_word);
     display_grid(grid);
 
     return 0;

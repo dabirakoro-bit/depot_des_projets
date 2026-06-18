@@ -19,7 +19,7 @@ int compare_by_length_desc_2d(const void *a, const void *b) {
 }
 
 // --------------------------------------------------
-// Types et structures
+// Types et structures : pour eviter beaucoup de variable en entrée des fonctions
 // --------------------------------------------------
 typedef enum {
     NO_DIRECTION,
@@ -184,9 +184,8 @@ bool place_word(char grid[ROWS][COLS], const char* word, MatchInfo m, Direction 
     return false;
 }
 
-// --------------------------------------------------
-// Placement du premier mot
-// --------------------------------------------------
+
+//nous avons péféré faire une fonction à part pour le placement du premier car j'ai décidé de chosisir le premier mot au hasard 
 bool place_first_word(char grid[ROWS][COLS], const char* word, int row, int col, Direction dir) {
     int L = strlen(word);
     if (dir == HORIZONTAL) {
@@ -199,9 +198,10 @@ bool place_first_word(char grid[ROWS][COLS], const char* word, int row, int col,
     return true;
 }
 
-// --------------------------------------------------
-// Dummy crossword horizontal/vertical
-// --------------------------------------------------
+
+
+//fonction pour la géneration des dummys crossword 
+
 void dummy_crossword_horizontal(char grid[ROWS][COLS], char lexicon[MAX_WORDS][MAX_WORD_SIZE], int lexicon_size) {
     for (int i = 0; i < lexicon_size && i < ROWS; i++) {
         place_first_word(grid, lexicon[i], i, 0, HORIZONTAL); // place mot sur chaque ligne
@@ -213,6 +213,7 @@ void dummy_crossword_vertical(char grid[ROWS][COLS], char lexicon[MAX_WORDS][MAX
         place_first_word(grid, lexicon[j], 0, j, VERTICAL); // place mot sur chaque colonne
     }
 }
+
 
 // --------------------------------------------------
 // Placement direct pour le mode joueur
@@ -288,10 +289,11 @@ int main() {
     int player_score = 0;
     const char* best_first_word = NULL;
 
-    read_lexicon("lexique", lexicon, &lexicon_size);
+    read_lexicon("lexique", lexicon, &lexicon_size); // fonction pour lire lexique
+  
+    //fonction de trie des mots à placé (décroissant) 
+   qsort(lexicon, lexicon_size, MAX_WORD_SIZE, compare_by_length_desc_2d);
 
-    // Tri des mots décroissant
-    qsort(lexicon, lexicon_size, MAX_WORD_SIZE, compare_by_length_desc_2d);
 
     do {
         printf("\n===== MENU TEST CROSSWORD =====\n");
@@ -459,3 +461,4 @@ int main() {
     } while (choice != 0);
 
 }
+
